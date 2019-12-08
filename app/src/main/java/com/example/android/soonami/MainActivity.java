@@ -45,8 +45,7 @@ public class MainActivity extends AppCompatActivity {
 
     /** URL to query the USGS dataset for earthquake information */
     private static final String USGS_REQUEST_URL =
-            "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2012-01-01&endtime=2012-12-01&minmagnitude=6";
-
+"https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2014-01-01&endtime=2014-12-01&minmagnitude=7";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -156,6 +155,7 @@ public class MainActivity extends AppCompatActivity {
             String jsonResponse = "";
             HttpURLConnection urlConnection = null;
             InputStream inputStream = null;
+          if(url!=null){
             try {
                 urlConnection = (HttpURLConnection) url.openConnection();
                 urlConnection.setRequestMethod("GET");
@@ -166,6 +166,7 @@ public class MainActivity extends AppCompatActivity {
                 jsonResponse = readFromStream(inputStream);
             } catch (IOException e) {
                 // TODO: Handle the exception
+                Log.e("ERROR","IOException",e);
             } finally {
                 if (urlConnection != null) {
                     urlConnection.disconnect();
@@ -174,7 +175,18 @@ public class MainActivity extends AppCompatActivity {
                     // function must handle java.io.IOException here
                     inputStream.close();
                 }
-            }
+            }}
+          try {
+              JSONObject j = new JSONObject(jsonResponse);
+              JSONObject m=j.getJSONObject("metadata");
+              int i=m.getInt("status");
+              if(i!=200)
+                  jsonResponse="";
+          }
+          catch (JSONException e){
+
+          }
+
             return jsonResponse;
         }
 
@@ -202,8 +214,9 @@ public class MainActivity extends AppCompatActivity {
          */
         private Event extractFeatureFromJson(String earthquakeJSON) {
             try {
-                JSONObject baseJsonResponse = new JSONObject(earthquakeJSON);
-                JSONArray featureArray = baseJsonResponse.getJSONArray("features");
+                if(earthquakeJSON!=null) {
+                    JSONObject baseJsonResponse = new JSONObject(earthquakeJSON);
+                    JSONArray featureArray = baseJsonResponse.getJSONArray("features");
 
                 // If there are results in the features array
                 if (featureArray.length() > 0) {
@@ -218,6 +231,7 @@ public class MainActivity extends AppCompatActivity {
 
                     // Create a new {@link Event} object
                     return new Event(title, time, tsunamiAlert);
+                }
                 }
             } catch (JSONException e) {
                 Log.e(LOG_TAG, "Problem parsing the earthquake JSON results", e);
